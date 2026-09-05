@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2f5d50">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<title>مكتبتي</title>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5.5C10.3 4.4 7.8 4 5 4v13c2.8 0 5.3.4 7 1.5M12 5.5C13.7 4.4 16.2 4 19 4v13c-2.8 0-5.3.4-7 1.5M12 5.5v13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><h1 id="brandName">مكتبتي</h1><p id="brandSubtitle">دروسك ومشاريعك، مرتّبة في مكان واحد</p></div>
+  </div>
+  <div class="top-actions">
+    <button class="icon-btn" id="themeBtn" title="الوضع الليلي">🌙</button>
+    <button class="icon-btn" id="installBtn" title="تثبيت التطبيق" hidden>⬇️</button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <h2>مكتبتك الصغيرة<br>للدروس والمشاريع</h2>
+      <p>افتح أي درس أو مشروع مباشرة من هنا، وتابع من حيث توقفت، دون أن تفقد أثر أي جزء.</p>
+    </div>
+    <dl class="hero-stats">
+      <div class="stat"><dt>دروس ومشاريع</dt><dd id="statCourses">0</dd></div>
+      <div class="stat"><dt>تصنيفات</dt><dd id="statCategories">0</dd></div>
+      <div class="stat"><dt>في المفضلة</dt><dd id="statFavorites">0</dd></div>
+    </dl>
+  </div>
+</section>
+
+<main class="container">
+  <div class="search-box">
+    <span aria-hidden="true">🔎</span><input id="search" placeholder="ابحث عن درس، مشروع، وسم أو تصنيف...">
+    <button id="clearSearch" class="clear-search hidden" title="مسح البحث">✕</button>
+  </div>
+
+  <div id="categories" class="chips"></div>
+
+  <section id="continueSection" class="section hidden">
+    <div class="section-head"><h2>آخر ما شاهدته</h2><button id="historyBtn" class="text-btn">السجل الكامل</button></div>
+    <div id="continueList" class="mini-list"></div>
+  </section>
+
+  <section id="featuredSection" class="section hidden">
+    <div class="section-head"><h2>المميز</h2></div>
+    <div id="featuredGrid" class="cards"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2 id="sectionTitle">كل المحتوى</h2><span id="countLabel"></span></div>
+    <div id="cards" class="cards"></div>
+    <div id="empty" class="empty hidden">لا نتائج لهذا البحث. جرّب كلمة أخرى أو اختر تصنيفًا مختلفًا.</div>
+  </section>
+
+  <section id="exploreSection" class="section hidden">
+    <div class="section-head"><h2>الأكثر متابعة</h2></div>
+    <div id="trendingGrid" class="cards"></div>
+  </section>
+</main>
+
+<div id="courseModal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-card">
+    <div class="modal-head"><div><span id="modalBadge" class="eyebrow-tag"></span><h2 id="modalTitle"></h2><p id="modalDesc"></p></div><button id="closeModal" class="close-btn">✕</button></div>
+    <div id="modalMeta" class="meta"></div>
+    <div id="partsList" class="parts-list"></div>
+  </div>
+</div>
+
+<div id="viewer" class="viewer hidden">
+  <div class="viewer-bar">
+    <div class="viewer-title"><button id="backCourse" class="viewer-back hidden">←</button><button id="partsToggle" class="viewer-back parts-toggle hidden" title="الأجزاء">☰</button><strong id="viewerTitle">الدرس</strong><span id="partCounter"></span></div>
+    <div class="viewer-actions">
+      <button id="prevPart" title="الجزء السابق">›</button>
+      <button id="nextPart" title="الجزء التالي">‹</button>
+      <button id="favViewer" title="المفضلة">♡</button>
+      <button id="openNew" title="فتح في تبويب جديد">↗</button>
+      <button id="fullscreen" title="ملء الشاشة">⛶</button>
+      <button id="closeViewer" title="إغلاق">✕</button>
+    </div>
+  </div>
+  <div class="lesson-layout">
+    <aside id="lessonSidebar" class="lesson-sidebar"></aside>
+    <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+    <iframe id="siteFrame" title="محتوى الدرس" allowfullscreen></iframe>
+  </div>
+</div>
+
+<div id="historyModal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-card small"><div class="modal-head"><h2>سجل المشاهدة</h2><button id="closeHistory" class="close-btn">✕</button></div><div id="historyList"></div></div>
+</div>
+
+<footer>مكتبتي — أرشيفك التعليمي الخاص</footer>
+<script src="app.js"></script>
+</body>
+</html>
+
