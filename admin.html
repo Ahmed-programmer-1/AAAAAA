@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>إدارة المكتبة</title><link rel="stylesheet" href="style.css">
+<style>
+body{font-family:var(--font-body)}
+.admin{max-width:1000px;margin:auto;padding:25px 15px}.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-l);padding:22px;margin-bottom:18px}
+h1,h2{font-family:var(--font-display)}
+label{display:block;font-weight:600;margin:14px 0 7px;font-size:14px}input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:var(--radius-s);background:var(--bg);color:var(--text);font:inherit}textarea{min-height:85px}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.btn{border:1px solid transparent;border-radius:var(--radius-s);padding:11px 18px;cursor:pointer;margin-top:12px;font-weight:600}.primary{background:var(--primary);color:var(--primary-ink)}.soft{background:var(--soft);color:var(--text);border-color:var(--line)}.danger{background:transparent;color:var(--danger);border-color:var(--danger)}.hint{color:var(--muted);font-size:13px;line-height:1.7}.msg{margin-top:13px;padding:12px;border-radius:var(--radius-s);background:var(--soft);border:1px solid var(--line)}.login{max-width:520px;margin:70px auto}.part-upload{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;margin:6px 0;padding:9px 12px;background:var(--soft);border-radius:var(--radius-s)}.order-num{color:var(--muted);font-weight:600;text-align:center;font-size:13px}.file-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.file-actions{display:flex;gap:4px}.file-actions button{margin:0;padding:6px 9px;font-size:12px}.files-list{max-height:360px;overflow:auto;padding-inline-end:4px;margin-top:8px}.site-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:13px 0}.site-row:last-child{border:0}.actions{display:flex;gap:7px;flex-wrap:wrap}.check{display:flex;gap:9px;align-items:center;margin-top:13px}.check input{width:auto}@media(max-width:650px){.row{grid-template-columns:1fr}.part-upload{grid-template-columns:22px 1fr}.file-actions{grid-column:1/-1;justify-content:flex-end;margin-top:4px}}
+</style></head>
+<body>
+<div class="admin">
+<section id="login" class="panel login">
+<h1>🔐 إدارة المكتبة</h1><p class="hint">صفحة مخفية للإدارة. يتم الاتصال مباشرة بـ GitHub باستخدام صلاحية Contents. لا يتم وضع الـToken في ملفات المشروع.</p>
+<label>GitHub Token</label><input id="token" type="password" autocomplete="off" placeholder="github_pat_...">
+<button class="btn primary" id="loginBtn">دخول</button>
+</section>
+
+<div id="app" class="hidden">
+<section class="panel">
+<h1>⚙️ إعدادات GitHub</h1>
+<div class="row"><div><label>Owner</label><input id="owner" placeholder="ahmed-programmer-1"></div><div><label>Repository</label><input id="repo" placeholder="rdry"></div></div>
+<label>Branch</label><input id="branch" value="main">
+<button class="btn primary" id="saveSettings">اختبار الاتصال وحفظ</button>
+<button class="btn soft" id="logout">تسجيل الخروج</button>
+</section>
+
+<section class="panel">
+<h2 id="formTitle">➕ إضافة محتوى</h2>
+<div class="row"><div><label>اسم الدرس / الكورس</label><input id="name" placeholder="JavaScript للمبتدئين"></div><div><label>التصنيف</label><input id="category" placeholder="JavaScript"></div></div>
+<label>الوصف</label><textarea id="description" placeholder="وصف يظهر على الكرت"></textarea>
+<div class="row"><div><label>المستوى</label><select id="level"><option value="">بدون تحديد</option><option>مبتدئ</option><option>متوسط</option><option>متقدم</option></select></div><div><label>المدة</label><input id="duration" placeholder="120 دقيقة"></div></div>
+<label>الوسوم</label><input id="tags" placeholder="javascript, frontend, beginner">
+<label>صورة الكرت (اختياري)</label><input id="image" type="file" accept="image/*">
+<label>أجزاء الدرس</label>
+<p class="hint">اختر كل ملفات HTML للدرس دفعة واحدة — من غير حد أقصى لعددها. هيتم ترتيبها تلقائيًا حسب اسم الملف، وتقدر تعدّل الترتيب بالأسهم لو حبيت.</p>
+<input id="htmlFiles" type="file" accept=".html,.htm,text/html" multiple>
+<div id="selectedFiles"></div>
+<label class="check"><input id="featured" type="checkbox"> ⭐ اجعل هذا المحتوى مميزًا</label>
+<button class="btn primary" id="submit">رفع إلى GitHub</button>
+<button class="btn soft hidden" id="cancel">إلغاء التعديل</button>
+<div id="msg" class="msg hidden"></div>
+</section>
+
+<section class="panel"><h2>📚 المحتوى الحالي</h2><div id="list">جاري التحميل...</div></section>
+</div>
+</div>
+
+<script>
+const API="https://api.github.com";let token=sessionStorage.getItem("libraryToken")||"",sites=[],editing=-1;
+const $=x=>document.getElementById(x);
+function cfg(){return{owner:$("owner").value.trim(),repo:$("repo").value.trim(),branch:$("branch").value.trim()||"main"}}
+function headers(){return{"Accept":"application/vnd.github+json","Authorization":"Bearer "+token,"X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"}}
+function msg(t,err=false){$("msg").textContent=t;$("msg").style.background=err?"#fef3f2":"var(--soft)";$("msg").style.color=err?"#b42318":"var(--text)";$("msg").classList.remove("hidden")}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function slug(v){return (v.normalize("NFKD").replace(/[^\u0600-\u06FF\w\s-]/g,"").trim().replace(/\s+/g,"-").replace(/-+/g,"-")||"content")+"-"+Math.random().toString(36).slice(2,7)}
+function b64(t){const a=new TextEncoder().encode(t);let s="";for(let i=0;i<a.length;i+=0x8000)s+=String.fromCharCode(...a.subarray(i,i+0x8000));return btoa(s)}
+function f64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=rej;r.readAsDataURL(f)})}
+async function apiError(r){let text="";try{text=await r.text()}catch{}let m=text;try{const j=JSON.parse(text);m=j.message||text}catch{}
+ if(r.status===401)return Error("Token غير صالح أو منتهي. تأكد من نسخ Token صحيح.");
+ if(r.status===403)return Error("لا تملك صلاحية كافية (تأكد أن Token يملك Contents: Read and write).");
+ if(r.status===404)return Error("لم يتم العثور على المستودع. تأكد من Owner وRepository وأن Token يملك صلاحية الوصول له.");
+ if(r.status===409||r.status===422)return Error("تعارض في البيانات (قد يكون الملف تغيّر في GitHub). أعد المحاولة بعد تحديث الصفحة.");
+ return Error(m||("خطأ من GitHub: "+r.status))}
+async function get(path){const c=cfg(),url=`${API}/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(c.branch)}`;const r=await fetch(url,{headers:headers()});if(r.status===404)return null;if(!r.ok)throw await apiError(r);return r.json()}
+async function put(path,content,message,sha=null){const c=cfg(),url=`${API}/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}`,body={message,content,branch:c.branch};if(sha)body.sha=sha;const r=await fetch(url,{method:"PUT",headers:headers(),body:JSON.stringify(body)});if(!r.ok)throw await apiError(r);return r.json()}
+async function del(path,sha,message){const c=cfg(),url=`${API}/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}`;const r=await fetch(url,{method:"DELETE",headers:headers(),body:JSON.stringify({message,sha,branch:c.branch})});if(!r.ok)throw await apiError(r)}
+async function loadJson(){const x=await get("sites.json");if(!x){sites=[];return null}const bytes=Uint8Array.from(atob(x.content.replace(/\n/g,"")),c=>c.charCodeAt(0));sites=JSON.parse(new TextDecoder().decode(bytes));if(!Array.isArray(sites))sites=sites.sites||[];return x}
+async function saveJson(item){return put("sites.json",b64(JSON.stringify(sites,null,2)+"\n"),"Update sites.json",item?.sha||null)}
+function naturalCompare(a,b){const ax=[],bx=[];a.replace(/(\d+)|(\D+)/g,(_,d,s)=>{ax.push([d?parseInt(d,10):Infinity,s||""])});b.replace(/(\d+)|(\D+)/g,(_,d,s)=>{bx.push([d?parseInt(d,10):Infinity,s||""])});while(ax.length&&bx.length){const an=ax.shift(),bn=bx.shift();const nn=(an[0]-bn[0])||an[1].localeCompare(bn[1]);if(nn)return nn}return ax.length-bx.length}
+function filesToDT(fs){const dt=new DataTransfer();fs.forEach(f=>dt.items.add(f));return dt.files}
+function renderFiles(){
+  const box=$("selectedFiles"),fs=[...$("htmlFiles").files];
+  if(!fs.length){box.innerHTML="";return}
+  box.innerHTML=`<p class="hint">${fs.length} ملف مختار.</p><div class="files-list">${fs.map((f,i)=>`<div class="part-upload"><span class="order-num">${i+1}</span><div class="file-name" title="${esc(f.name)}">${esc(f.name)}</div><div class="file-actions"><button type="button" class="btn soft move-up" data-i="${i}" ${i===0?"disabled":""}>▲</button><button type="button" class="btn soft move-down" data-i="${i}" ${i===fs.length-1?"disabled":""}>▼</button><button type="button" class="btn danger remove-file" data-i="${i}">حذف</button></div></div>`).join("")}</div>`;
+  box.querySelectorAll(".remove-file").forEach(b=>b.onclick=()=>{const fs2=[...$("htmlFiles").files];fs2.splice(+b.dataset.i,1);$("htmlFiles").files=filesToDT(fs2);renderFiles()});
+  box.querySelectorAll(".move-up").forEach(b=>b.onclick=()=>swapFiles(+b.dataset.i,+b.dataset.i-1));
+  box.querySelectorAll(".move-down").forEach(b=>b.onclick=()=>swapFiles(+b.dataset.i,+b.dataset.i+1));
+}
+function swapFiles(i,j){const fs=[...$("htmlFiles").files];if(j<0||j>=fs.length)return;[fs[i],fs[j]]=[fs[j],fs[i]];$("htmlFiles").files=filesToDT(fs);renderFiles()}
+$("htmlFiles").onchange=()=>{const sorted=[...$("htmlFiles").files].sort((a,b)=>naturalCompare(a.name,b.name));$("htmlFiles").files=filesToDT(sorted);renderFiles()};
+async function runWithConcurrency(items,limit,worker){let idx=0;async function pull(){const i=idx++;if(i>=items.length)return;await worker(items[i],i);return pull()}await Promise.all(Array.from({length:Math.min(limit,items.length)},pull))}
+function renderList(){$("list").innerHTML=sites.length?sites.map((s,i)=>`<div class="site-row"><div><strong>${esc(s.name)}</strong><div class="hint">${esc(s.category||"")} • ${(s.parts||[]).length||1} جزء ${s.featured?"• ⭐ مميز":""}</div></div><div class="actions"><button class="btn soft" onclick="editSite(${i})">تعديل</button><button class="btn danger" onclick="deleteSite(${i})">حذف</button></div></div>`).join(""):'<p class="hint">لا يوجد محتوى.</p>'}
+window.editSite=i=>{const s=sites[i];editing=i;$("formTitle").textContent="✏️ تعديل المحتوى";$("name").value=s.name||"";$("category").value=s.category||"";$("description").value=s.description||"";$("level").value=s.level||"";$("duration").value=s.duration||"";$("tags").value=(s.tags||[]).join(", ");$("featured").checked=!!s.featured;$("htmlFiles").value="";const parts=s.parts||[];$("selectedFiles").innerHTML=`<p class="hint">الأجزاء الحالية (${parts.length}) — اترك اختيار الملفات فارغًا للإبقاء عليها كما هي:</p><div class="files-list">${parts.map((p,j)=>`<div class="part-upload"><span class="order-num">${j+1}</span><div class="file-name" title="${esc(p.title||p.file)}">${esc(p.title||p.file)}</div></div>`).join("")}</div>`;$("formTitle").scrollIntoView({behavior:"smooth"});$("cancel").classList.remove("hidden");$("submit").textContent="حفظ التعديل"};
+$("cancel").onclick=()=>{editing=-1;$("formTitle").textContent="➕ إضافة محتوى";$("submit").textContent="رفع إلى GitHub";$("cancel").classList.add("hidden");$("name").value=$("category").value=$("description").value=$("duration").value=$("tags").value="";$("level").value="";$("featured").checked=false;$("htmlFiles").value="";$("image").value="";$("selectedFiles").innerHTML=""};
+window.deleteSite=async i=>{const s=sites[i];if(!confirm(`حذف ${s.name}؟ سيتم حذف أجزاء HTML والصورة المرتبطة.`))return;try{msg("جاري الحذف...");for(const p of s.parts||[]){const x=await get(p.file);if(x)await del(p.file,x.sha,"Delete "+p.file)}if(s.image){const x=await get(s.image);if(x)await del(s.image,x.sha,"Delete "+s.image)}const item=await get("sites.json");sites.splice(i,1);await saveJson(item);renderList();msg("تم الحذف.")}catch(e){msg("فشل الحذف: "+e.message,true)}};
+$("loginBtn").onclick=async()=>{token=$("token").value.trim();if(!token)return alert("أدخل Token");sessionStorage.setItem("libraryToken",token);$("login").classList.add("hidden");$("app").classList.remove("hidden");try{await loadJson();renderList();msg("تم الاتصال.")}catch(e){msg("فشل الاتصال: "+e.message,true)}};
+$("saveSettings").onclick=async()=>{try{const c=cfg();if(!c.owner||!c.repo)throw Error("أدخل Owner وRepository");const r=await fetch(`${API}/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}`,{headers:headers()});if(!r.ok)throw await apiError(r);localStorage.setItem("libraryCfg",JSON.stringify(c));await loadJson();renderList();msg("تم حفظ الإعدادات والاتصال بنجاح.")}catch(e){msg("فشل الاتصال: "+e.message,true)}};
+$("logout").onclick=()=>{sessionStorage.removeItem("libraryToken");location.reload()};
+$("submit").onclick=async()=>{
+ try{
+  const c=cfg(),name=$("name").value.trim();if(!token||!c.owner||!c.repo)throw Error("أكمل إعدادات GitHub.");if(!name)throw Error("اكتب الاسم.");
+  const fs=[...$("htmlFiles").files];if(editing<0&&!fs.length)throw Error("اختر ملف HTML واحدًا على الأقل.");
+  for(const f of fs)if(!/\.html?$/i.test(f.name))throw Error(`الملف "${f.name}" ليس HTML. كل الأجزاء يجب أن تكون HTML.`);
+  msg("جاري تجهيز الملفات...");
+  const jsonItem=await get("sites.json");let old=editing>=0?{...sites[editing]}:null;const id=old?.id||slug(name), folder=`courses/${id}`;
+  let parts=old?.parts||[];
+  if(fs.length){
+    const next=new Array(fs.length),failed=[];let done=0;
+    await runWithConcurrency(fs,3,async(f,i)=>{
+      const file=`${folder}/part-${String(i+1).padStart(2,"0")}.html`;
+      try{const existing=await get(file);await put(file,await f64(f),old?"Update "+file:"Add "+file,existing?.sha||null);next[i]={title:f.name.replace(/\.html?$/i,"").replace(/[-_]+/g," "),file}}
+      catch(e){failed.push(f.name)}
+      done++;msg(`جاري رفع الملفات... (${done} من ${fs.length})`);
+    });
+    if(failed.length)throw Error(`فشل رفع ${failed.length} ملف: ${failed.slice(0,5).join("، ")}${failed.length>5?" ...":""}. أعد المحاولة قبل الحفظ.`);
+    if(old?.parts){const toDelete=old.parts.filter(p=>!next.some(n=>n.file===p.file));await runWithConcurrency(toDelete,3,async p=>{const x=await get(p.file);if(x)await del(p.file,x.sha,"Delete old "+p.file)})}
+    parts=next;
+  }
+  let imagePath=old?.image||"";const image=$("image").files[0];
+  if(image){const ext=(image.name.match(/\.([a-z0-9]+)$/i)||[])[1]||"png";imagePath=`courses/${id}/cover.${ext}`;const x=await get(imagePath);await put(imagePath,await f64(image),"Add/update cover",x?.sha||null);if(old?.image&&old.image!==imagePath){const y=await get(old.image);if(y)await del(old.image,y.sha,"Delete old cover")}}
+  const obj={id,name,description:$("description").value.trim(),category:$("category").value.trim(),level:$("level").value,duration:$("duration").value.trim(),tags:$("tags").value.split(",").map(x=>x.trim()).filter(Boolean),featured:$("featured").checked,image:imagePath,parts};
+  if(editing>=0)sites[editing]=obj;else sites.push(obj);await saveJson(jsonItem);renderList();msg(editing>=0?"تم تعديل المحتوى بنجاح.":"تمت إضافة المحتوى بنجاح.");$("cancel").click();
+ }catch(e){msg("فشلت العملية: "+e.message,true);console.error(e)}
+};
+(function(){const c=JSON.parse(localStorage.getItem("libraryCfg")||"{}");$("owner").value=c.owner||"";$("repo").value=c.repo||"";$("branch").value=c.branch||"main";if(token){$("login").classList.add("hidden");$("app").classList.remove("hidden");loadJson().then(renderList).catch(e=>msg("تعذر تحميل المحتوى: "+e.message,true))}})();
+</script></body></html>
