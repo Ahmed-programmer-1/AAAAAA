@@ -1,0 +1,21 @@
+[
+  {
+    "id": "Ahmed-700ds",
+    "name": "Ahmed",
+    "description": "l;sdlap[",
+    "category": "glp-r",
+    "level": "مبتدئ",
+    "duration": "20",
+    "tags": [
+      "polpo"
+    ],
+    "featured": false,
+    "image": "courses/Ahmed-700ds/cover.jpeg",
+    "parts": [
+      {
+        "title": "485",
+        "file": "courses/Ahmed-700ds/part-01.html"
+      }
+    ]
+  }
+]
